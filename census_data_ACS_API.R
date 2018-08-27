@@ -4,8 +4,8 @@ require("acs")
 xwalk<-read.csv("Tract_UR_key.csv", header=TRUE)
 api.key.install(key="564b38dac3a753efb9e6541ae2414678652018d6")
 
-lookup<-acs.lookup(endyear = 2015, span = 5,keyword="income",case.sensitive = F)
-lookup
+#lookup<-acs.lookup(endyear = 2015, span = 5,keyword="income",case.sensitive = F)
+#lookup
 
 devtools::install_github("collectivemedia/tictoc")
 ###Create function to fetch ACS data with API
