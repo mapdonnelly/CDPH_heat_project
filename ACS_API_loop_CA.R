@@ -419,6 +419,20 @@ join_df<-dplyr::right_join(race_df, pop_dens_df) %>%
   right_join(.,house_type_65_df)
 
 census_df<-join_df[,c(12:14, 1:11, 15:26)]
+
+census_df$county<-as.character(census_df$county)
+census_df$county<-as.factor(census_df$county)
+
+county_names<-read.csv("county_names.csv", header=TRUE)
+county_names<-county_names[,-3]
+colnames(county_names)[1]<-"county"
+county_names[,1]<-as.factor(county_names[,1])
+library(stringr)
+county_names[,1]<-str_pad(county_names[,1], 3, pad = "0")
+county_names[,1]<-as.factor(county_names[,1])
+
+census_df<- dplyr::right_join(census_df, county_names, by="county")
+census_df<-census_df[,c(1:3, 27, 4:26)]
 saveRDS(census_df, "census_tract_CA_heat.rds")
 
 x<-readRDS("census_tract_CA_heat.rds")
