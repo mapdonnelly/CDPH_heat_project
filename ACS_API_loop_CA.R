@@ -416,9 +416,10 @@ for (i in 1:length(counties)) {
 house_type_65_df = do.call(rbind, house_type_65_list)
 join_df<-dplyr::right_join(race_df, pop_dens_df) %>% 
   right_join(.,med_inc_df) %>%
-  right_join(.,house_type_65_df)
+  right_join(.,house_type_65_df) %>% 
+  right_join(., hisp_lat_race_df)
 
-census_df<-join_df[,c(12:14, 1:11, 15:26)]
+census_df<-join_df[,c(12:14, 1:11, 15:26,27,28,38)]
 
 census_df$county<-as.character(census_df$county)
 census_df$county<-as.factor(census_df$county)
@@ -432,7 +433,7 @@ county_names[,1]<-str_pad(county_names[,1], 3, pad = "0")
 county_names[,1]<-as.factor(county_names[,1])
 
 census_df<- dplyr::right_join(census_df, county_names, by="county")
-census_df<-census_df[,c(1:3, 27, 4:26)]
+census_df<-census_df[,c(1:3, 30, 4:29)]
 saveRDS(census_df, "census_tract_CA_heat.rds")
 
 x<-readRDS("census_tract_CA_heat.rds")
