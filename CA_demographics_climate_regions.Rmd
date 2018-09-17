@@ -8,6 +8,7 @@ output: html_notebook
 ***
 Bring in data
 ```{r}
+rm(list=ls())
 df<-readRDS("census_tract_CA_heat.rds")
 xwalk<-read.csv("Tract_UR_key.csv", header=TRUE)
 df$ct9<-paste(df$county, df$tract, sep='')
@@ -16,7 +17,7 @@ xwalk$ct9<-str_pad(xwalk$ct9, 9, pad="0")
 ```
 Create climate regions from Knowlton et al. 
 ```{r}
-
+library(dplyr)
 df <- xwalk %>% 
   dplyr::select(ct9 ,MSSAdef, NCHS_2013code,NCHS_2006code, NCHS_1990basedcode,NCHS2013_text) %>%
   right_join(df, by="ct9")
@@ -55,17 +56,18 @@ df$prop.am.ind<-df$am_ind_alone/df$race_total
 df$prop.nat.haw<-df$nat_haw_pac_isl/df$race_total
 df$prop.hisp.lat<-df$yes_hisp_lat_total/df$hisp_lat_race_total
 
+##reduce dataframe
+df<-df[,-c(4,5,19:21,27:32)]
 ```
+
+
+
 ***
 Median household income
 ```{r, warning=FALSE}
 library(dplyr)
 library(ggplot2)
-df %>% 
-  ggplot(aes(median_household_income)) +                     
-  geom_histogram( fill="darkturquoise", alpha=.5) + 
-  theme_minimal() +
-  facet_wrap(~ kn_region)
+
 
 df %>% 
   ggplot(aes(x=kn_region, y=median_household_income)) +                     
@@ -76,12 +78,7 @@ df %>%
 ***
 Population total
 ```{r, warning=FALSE}
-df %>% 
-  ggplot(aes(population)) +                     
-  geom_histogram(fill="violet", alpha=.5) + 
-  theme_minimal() +
-  xlim(0,20000) +
-  facet_wrap(~ kn_region)
+
 
 df %>% 
   ggplot(aes(x=kn_region, y=population)) +                     
@@ -91,18 +88,6 @@ df %>%
 ***
 White population alone
 ```{r, warning=FALSE}
-df %>% 
-  ggplot() +
-  geom_histogram(aes(white_alone), fill="darkturquoise", alpha=.5) + 
-    theme_minimal() +
-  xlim(0,15000) +
-  facet_wrap(~ kn_region)
-
-df %>% 
-  ggplot() +
-  geom_histogram(aes(prop.white), fill="darkturquoise", alpha=.5) + 
-    theme_minimal() +
-  facet_wrap(~ kn_region)
 
 df %>% 
   ggplot(aes(x=kn_region, y=prop.white)) +                     
@@ -112,19 +97,7 @@ df %>%
 ***
 African American population alone
 ```{r, warning=FALSE}
-df %>% 
-  ggplot() +
-  geom_histogram(aes(black_af_am_alone), fill="violet",alpha=.5) +
-  theme_minimal() +
-  xlim(0,6000) +
-  ylim(0,1250) +
-  facet_wrap(~ kn_region)
 
-df %>% 
-  ggplot() +
-  geom_histogram(aes(prop.af.am), fill="violet",alpha=.5) +
-  theme_minimal() +
-  facet_wrap(~ kn_region)
 
 df %>% 
   ggplot(aes(x=kn_region, y=prop.af.am)) +                     
@@ -134,19 +107,7 @@ df %>%
 ***
 American Indian population alone
 ```{r, warning=FALSE}
-df %>% 
-  ggplot() +
-  geom_histogram(aes(am_ind_alone), fill="slateblue1",alpha=.5) +
-  theme_minimal() +
-  xlim(0,500) +
-  ylim(0,1000) +
-  facet_wrap(~ kn_region)
 
-df %>% 
-  ggplot() +
-  geom_histogram(aes(prop.am.ind), fill="slateblue1",alpha=.5) +
-  theme_minimal() +
-  facet_wrap(~ kn_region)
 
 df %>% 
   ggplot(aes(x=kn_region, y=prop.am.ind)) +                     
@@ -156,19 +117,6 @@ df %>%
 ***
 Asian population alone
 ```{r, warning=FALSE}
-df %>% 
-  ggplot() +
-  geom_histogram(aes(asian_alone), fill="palevioletred1",alpha=.5) +
-  theme_minimal() +
-  xlim(0,7000) +
-  ylim(0,1500) +
-  facet_wrap(~ kn_region)
-
-df %>% 
-  ggplot() +
-  geom_histogram(aes(prop.asian), fill="palevioletred1",alpha=.5) +
-  theme_minimal() +
-  facet_wrap(~ kn_region)
 
 df %>% 
   ggplot(aes(x=kn_region, y=prop.asian)) +                     
@@ -178,19 +126,7 @@ df %>%
 ***
 Pacific Islander population alone
 ```{r, warning=FALSE}
-df %>% 
-  ggplot() +
-  geom_histogram(aes(nat_haw_pac_isl), fill="darkseagreen4",alpha=.5) +
-  theme_minimal() +
-  xlim(0,1000) +
-  ylim(0,400) +
-  facet_wrap(~ kn_region)
 
-df %>% 
-  ggplot() +
-  geom_histogram(aes(prop.nat.haw), fill="darkseagreen4",alpha=.5) +
-  theme_minimal() +
-  facet_wrap(~ kn_region)
 
 df %>% 
   ggplot(aes(x=kn_region, y=prop.nat.haw)) +                     
@@ -248,3 +184,64 @@ df %>%
    geom_violin( fill="darkturquoise", alpha=.5) + 
   theme_minimal() 
 ```
+```{r}
+library(reshape2)
+df.race<-df[,c(2,7,17,11:16,25,26)]
+df.melt<-melt(df.race, id=c("MSSAdef", "tract", "kn_region", "population"))
+df.melt$variable<-factor(df.melt$variable, levels =c( "white_alone", "yes_hisp_lat_total","black_af_am_alone","am_ind_alone","asian_alone","nat_haw_pac_isl","some_other_alone" ))
+
+labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_central="North Central", north_coast="North Coast", south_coast="South Coast", southeast_dessert="Southeast Dessert")
+
+df.melt %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x=variable,y = value, fill=variable))+
+  theme_minimal()+
+  facet_wrap(~kn_region, labeller=labeller(kn_region=labels)) +
+  theme(axis.text.x=element_blank()) +
+  ylim(0,15000)+
+  xlab("Race/ethnicity")+
+  ylab("Population by census tract")+
+  scale_fill_discrete(name="Race/ethnicity", labels=c("White", "Hispanic","Af. America", "Am. Indian","Asian","Pac. Islander", "Other"))
+```
+
+```{r}
+labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_central="North Central", north_coast="North Coast", south_coast="South Coast", southeast_dessert="Southeast Dessert")
+
+df.melt %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x=variable,y = value, fill=MSSAdef))+
+  theme_minimal()+
+   ylim(0,15000)+
+  facet_wrap(~kn_region, labeller = labeller(kn_region=labels)) +
+  scale_x_discrete(labels=c("Wh.", "Hisp.","Afr. Am.","Am. Ind.", "As.","Pac. Isl.", "Some other"))+
+  xlab("Race/ethnicity")+
+  ylab("Population by census tract")
+```
+
+```{r}
+labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_central="North Central", north_coast="North Coast", south_coast="South Coast", southeast_dessert="Southeast Dessert")
+
+df %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x=MSSAdef,y = median_household_income, fill=MSSAdef))+
+  theme_minimal()+
+  facet_wrap(~kn_region, labeller = labeller(kn_region=labels)) +
+  ylab("Median household income by census tract")+
+  xlab("MSSA Definition")+
+  scale_fill_discrete(name="MSSA Definition")
+```
+
+```{r}
+labels<- c(white_alone="White", yes_hisp_lat_total="Hispanic", black_af_am_alone="Af. American", am_ind_alone="Am. Indian", asian_alone="Asian", nat_haw_pac_isl="Pacific Islander", some_other_alone="Other")
+
+df.melt %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x=MSSAdef,y = value, fill=MSSAdef))+
+  theme_minimal()+
+  ylim(0,15000)+
+  facet_wrap(~variable, labeller = labeller(variable=labels))+
+  ylab("Population per census tract")+
+  xlab("MSSA Definition")+
+  scale_fill_discrete(name="MSSA Definition")
+```
+
