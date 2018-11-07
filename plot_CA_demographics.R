@@ -47,6 +47,7 @@ df$prop.hisp.lat<-df$yes_hisp_lat_total/df$hisp_lat_race_total
 
 ##reduce dataframe
 df<-df[,-c(4,5,19:21,27:32)]
+inc.race<-readRDS("median_income_by_race.rds")
 
 library(dplyr)
 library(ggplot2)
@@ -59,7 +60,8 @@ labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_
 library(scales)
 
 png(file="mssa_population.png", width=1500,height=800)
-df.urban.rural.pop %>%
+
+  df.urban.rural.pop [which(!is.na(df.urban.rural.pop $MSSAdef)),] %>%
   ggplot() +
   geom_bar(mapping = aes(x=MSSAdef,y = population_sum, fill=MSSAdef), stat = "identity") +
   theme_bw()+
@@ -71,7 +73,7 @@ df.urban.rural.pop %>%
 dev.off()
 
 png(file="mssa_population_boxplots.png", width = 1500, height = 800)
-df %>%
+df[which(!is.na(df$MSSAdef)),] %>%
 ggplot() +
   geom_boxplot(mapping = aes(x=MSSAdef,y = population, fill=MSSAdef)) +
   theme_bw()+
@@ -83,14 +85,14 @@ ggplot() +
 dev.off()
 
 library(reshape2)
-df.race<-df[,c(2,7,17,11:16,25,26)]
-df.melt<-melt(df.race, id=c("MSSAdef", "tract", "kn_region", "population"))
+df.race<-df[,c(2,7,17,18,11:16,25,26)]
+df.melt<-melt(df.race, id=c("MSSAdef", "tract", "kn_region", "population", "median_household_income"))
 df.melt$variable<-factor(df.melt$variable, levels =c( "white_alone", "yes_hisp_lat_total","black_af_am_alone","am_ind_alone","asian_alone","nat_haw_pac_isl","some_other_alone" ))
 
 labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_central="North Central", north_coast="North Coast", south_coast="South Coast", southeast_dessert="Southeast Dessert")
 
 png(file="pop_race_region.png", width=1500,height=800)
-df.melt %>%
+df.melt[which(!is.na(df.melt$MSSAdef)),] %>%
   ggplot() +
   geom_boxplot(mapping = aes(x=variable,y = value, fill=variable))+
   theme_bw()+
@@ -107,7 +109,7 @@ dev.off()
 labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_central="North Central", north_coast="North Coast", south_coast="South Coast", southeast_dessert="Southeast Dessert")
 
 png( file="race_mssa.png", width=1500,height=800)
-df.melt %>%
+df.melt[which(!is.na(df.melt$MSSAdef)),] %>%
   ggplot() +
   geom_boxplot(mapping = aes(x=variable,y = value, fill=MSSAdef))+
   theme_bw()+
@@ -125,7 +127,7 @@ labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_
 
 png( file="income_mssa.png", width=1500,height=800)
 
-df %>%
+df[which(!is.na(df$MSSAdef)),] %>%
   ggplot() +
   geom_boxplot(mapping = aes(x=MSSAdef,y = median_household_income, fill=MSSAdef))+
   theme_bw()+
@@ -133,5 +135,57 @@ df %>%
   ylab("Median household income by census tract")+
   xlab("MSSA Definition")+
   scale_fill_discrete(name="MSSA Definition")+
+  theme(legend.title=element_text(size=18), legend.text=element_text(size=18),strip.text.x=element_text(size=18), axis.text=element_text(size=16), axis.title = element_text(size = 18)) 
+dev.off()
+
+png( file="over_65_mssa.png", width=1500,height=800)
+
+df[which(!is.na(df$MSSAdef)),] %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x=MSSAdef,y = over_65_living_alone, fill=MSSAdef))+
+  theme_bw()+
+  facet_wrap(~kn_region, labeller = labeller(kn_region=labels)) +
+  ylab("Population >65 living alone")+
+  xlab("MSSA Definition")+
+  scale_fill_discrete(name="MSSA Definition")+
+  theme(legend.title=element_text(size=18), legend.text=element_text(size=18),strip.text.x=element_text(size=18), axis.text=element_text(size=16), axis.title = element_text(size = 18)) 
+dev.off()
+
+
+#######
+###median income by race
+df.inc.race<- df %>% 
+  right_join(inc.race, by="name")
+
+df.race2<-df.inc.race[,c(2,7,17,18,26,34:41)]
+df.melt2<-melt(df.race2, id=c("MSSAdef", "tract.x", "kn_region", "population", "median_household_income"))
+df.melt2<-df.melt2[which(!is.na(df.melt2$MSSAdef)&!is.na(df.melt2$value)),]
+df.melt2$value<-as.numeric(as.character(df.melt2$value))
+
+png( file="income_by_race.png", width=1500,height=800)
+
+df.melt2%>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x=variable,y = value, fill=MSSAdef))+
+  theme_bw()+
+  #facet_wrap(~kn_region, labeller=labeller(kn_region=labels)) +
+  scale_x_discrete(labels=c("Wh","AA","AI.", "As","PI", "Ot.", "NH Wh.", "Hi"))+
+  xlab("Race/ethnicity")+
+  ylab("Median Income by census tract")+
+  scale_fill_discrete(name="MSSA Definition")+
+  theme(legend.title=element_text(size=18), legend.text=element_text(size=18),strip.text.x=element_text(size=18), axis.text=element_text(size=16), axis.title = element_text(size = 18)) 
+dev.off()
+
+png( file="income_by_race_urban.png", width=1500,height=800)
+
+df.melt2%>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x=MSSAdef,y = value, fill=variable))+
+  theme_bw()+
+  #facet_wrap(~kn_region, labeller=labeller(kn_region=labels)) +
+  #scale_x_discrete(labels=c())+
+  xlab("MSSA definition")+
+  ylab("Median Income by census tract")+
+  scale_fill_discrete(name="Income by race/ethnicity")+
   theme(legend.title=element_text(size=18), legend.text=element_text(size=18),strip.text.x=element_text(size=18), axis.text=element_text(size=16), axis.title = element_text(size = 18)) 
 dev.off()

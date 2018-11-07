@@ -9,7 +9,7 @@ output: html_notebook
 Bring in data
 ```{r}
 rm(list=ls())
-df<-readRDS("census_tract_CA_heat.rds")
+df<-readRDS("census_tract_CA_heat2.rds")
 xwalk<-read.csv("Tract_UR_key.csv", header=TRUE)
 df$ct9<-paste(df$county, df$tract, sep='')
 library(stringr)
@@ -44,19 +44,20 @@ df<- df %>% mutate( kn_region = ifelse(county_name %in% c("Alameda", "Contra Cos
 
 df$kn_region<-as.factor(df$kn_region)
 
-df[12:36] <- sapply(df[12:36],as.character)
-df[12:36] <- sapply(df[12:36],as.numeric)
+#####changing all of the factor variables to characters and then numeric vars-> should all be numeric
+df[12:124] <- sapply(df[12:124],as.character)
+df[12:124] <- sapply(df[12:124],as.numeric)
 df$over_65_living_alone<-df$F_65_in_households_nonfamily_householder_alone+df$M_65_in_households_nonfamily_householder_alone
 
 ###calculate race proportions
-df$prop.white<-df$white_alone/df$race_total
+df$prop.white<-df$not_hisp_lat_white_alone/df$race_total
 df$prop.af.am<-df$black_af_am_alone/df$race_total
 df$prop.asian<-df$asian_alone/df$race_total
 df$prop.am.ind<-df$am_ind_alone/df$race_total
 df$prop.nat.haw<-df$nat_haw_pac_isl/df$race_total
-df$prop.hisp.lat<-df$yes_hisp_lat_total/df$hisp_lat_race_total
+df$prop.hisp.lat<-df$hisp_lat_total/df$hisp_lat_race_total
 
-##reduce dataframe
+##reduce dataframe-> take out unecessary variables (NCHS 2006 + 1990 codes, 2 or more races, male/female over 65 household type)
 df<-df[,-c(4,5,19:21,27:32)]
 ```
 
@@ -138,7 +139,7 @@ Hispanic/latino
 ```{r, warning=FALSE}
 df %>% 
   ggplot() +
-  geom_histogram(aes(yes_hisp_lat_total), fill="sienna2",alpha=.5) +
+  geom_histogram(aes(hisp_lat_total), fill="sienna2",alpha=.5) +
   theme_minimal() +
   xlim(0,1000) +
   ylim(0,400) +
@@ -186,9 +187,9 @@ df %>%
 ```
 ```{r}
 library(reshape2)
-df.race<-df[,c(2,7,17,11:16,25,26)]
+df.race<-df[,c(2,7,17,114,11:16,25,26)]
 df.melt<-melt(df.race, id=c("MSSAdef", "tract", "kn_region", "population"))
-df.melt$variable<-factor(df.melt$variable, levels =c( "white_alone", "yes_hisp_lat_total","black_af_am_alone","am_ind_alone","asian_alone","nat_haw_pac_isl","some_other_alone" ))
+df.melt$variable<-factor(df.melt$variable, levels =c( "white_alone", "hisp_lat_total","black_af_am_alone","am_ind_alone","asian_alone","nat_haw_pac_isl","some_other_alone" ))
 
 labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_central="North Central", north_coast="North Coast", south_coast="South Coast", southeast_dessert="Southeast Dessert")
 
@@ -207,7 +208,8 @@ df.melt %>%
 ```{r}
 labels<-c(central_coast="Central Coast", central_valley="Central Valley", north_central="North Central", north_coast="North Coast", south_coast="South Coast", southeast_dessert="Southeast Dessert")
 
-df.melt %>%
+
+plot<-df.melt %>%
   ggplot() +
   geom_boxplot(mapping = aes(x=variable,y = value, fill=MSSAdef))+
   theme_minimal()+
@@ -215,7 +217,9 @@ df.melt %>%
   facet_wrap(~kn_region, labeller = labeller(kn_region=labels)) +
   scale_x_discrete(labels=c("Wh.", "Hisp.","Afr. Am.","Am. Ind.", "As.","Pac. Isl.", "Some other"))+
   xlab("Race/ethnicity")+
-  ylab("Population by census tract")
+  ylab("Population by census tract")+
+  scale_fill_discrete(name="MSSA Definition")
+
 ```
 
 ```{r}
@@ -232,7 +236,7 @@ df %>%
 ```
 
 ```{r}
-labels<- c(white_alone="White", yes_hisp_lat_total="Hispanic", black_af_am_alone="Af. American", am_ind_alone="Am. Indian", asian_alone="Asian", nat_haw_pac_isl="Pacific Islander", some_other_alone="Other")
+labels<- c(white_alone="White", hisp_lat_total="Hispanic", black_af_am_alone="Af. American", am_ind_alone="Am. Indian", asian_alone="Asian", nat_haw_pac_isl="Pacific Islander", some_other_alone="Other")
 
 df.melt %>%
   ggplot() +
