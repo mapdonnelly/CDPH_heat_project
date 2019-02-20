@@ -4,10 +4,11 @@ library(chron)
 library(RColorBrewer)
 library(lattice)
 library(ncdf4)
-setwd('~/Desktop/GitHub/CDPH_heat_project/data/')
+setwd('~/Google Drive/CDPH_internship/data/')
 
-ncpath<-"~/Desktop/GitHub/CDPH_heat_project/data/RCP45/"
+ncpath<-"~/Google Drive/CDPH_internship/data/RCP45/"
 ncname<-"ACCESS1-0_rcp45_tasmax_20060101_20061231_CA_NV"
+
 ncfname<-paste(ncpath,ncname, ".nc",sep = "")
 dname<-"tasmax"
 ncin<-nc_open(ncfname)
@@ -44,8 +45,8 @@ history<-ncatt_get(ncin,0,"history")
 conventions<-ncatt_get(ncin, 0, "Conventions")
 
 ##close the netcdf file
-nc_close()
-ls()
+#nc_close()
+#ls()
 
 ##convert time by first pulling apart components of time since 1900-01-01
 tustr<-strsplit(tunits$value," ")
@@ -81,3 +82,16 @@ lonlat<-as.matrix(expand.grid(lon,lat))
 tmp_df02<-data.frame(cbind(lonlat,tmp_mat))
 names(tmp_df02)<-c("lon","lat",1:365)
 head(na.omit(tmp_df02, 10))
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+d<- tmp_df02
+d<-d %>% gather(key=day, value=temp, -c(lat,lon))
+
+d %>% 
+  filter(day %in% seq(1,365,30)[-13]) %>% 
+  ggplot(aes(lon, lat, color = temp)) + 
+  geom_point() + 
+  facet_wrap(~day, nrow = 3) + 
+  scale_color_viridis_c() +
+  theme_void()
